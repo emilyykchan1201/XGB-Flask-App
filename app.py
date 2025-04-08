@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from xgboost import XGBRegressor
 import os
+import tempfile
 
 app = Flask(__name__)
 
@@ -56,33 +57,31 @@ def process_data():
         if not uploaded_file:
             return jsonify({'error': 'Please upload an Excel file (.xlsx)'}), 400
 
-        # Save uploaded file temporarily
-        file_path = os.path.join("uploads", uploaded_file.filename)
-        uploaded_file.save(file_path)
+        # Create a temporary file for uploading
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as temp_file:
+            file_path = temp_file.name
+            uploaded_file.save(file_path)
 
-        # Extract features from uploaded .xlsx file
-        features = extract_features(file_path)
+            # Extract features from uploaded .xlsx file
+            features = extract_features(file_path)
 
-        # Load XGB model
-        model = XGBRegressor()
-        model.load_model(MODEL_PATH)
+            # Load XGB model
+            model = XGBRegressor()
+            model.load_model(MODEL_PATH)
 
-        # Run prediction
-        predictions = model.predict(features)
+            # Run prediction
+            predictions = model.predict(features)
 
-        # Delete temporary file after processing
-        os.remove(file_path)
+            # Delete temporary file after processing
+            os.remove(file_path)
 
-        # Return predictions
-        return render_template('results.html', prediction=predictions[0])
+            # Return predictions
+            return render_template('results.html', prediction=predictions[0])
 
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
 
 if __name__ == '__main__':
-    # Ensure upload directory exists
-    os.makedirs("uploads", exist_ok=True)
-
     # Run the Flask app
     app.run(debug=True)
