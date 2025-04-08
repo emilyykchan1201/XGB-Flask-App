@@ -3,18 +3,18 @@ import numpy as np
 import pandas as pd
 import os
 import tempfile
-import tensorflow as tf
+# import tensorflow as tf  # Commenting out TensorFlow import since it's not being used now
 import nibabel as nib
 from xgboost import XGBRegressor
-from cnn_run import preprocess_data, run_cnn_prediction, save_predictions_to_csv, save_predictions_to_nifti  # Import your functions
+# from cnn_run import preprocess_data, run_cnn_prediction, save_predictions_to_csv, save_predictions_to_nifti  # Commenting out CNN functions
 
 app = Flask(__name__)
 
 # Paths to models
 XGB_MODEL_FOLDER = "./model_XGB"
-CNN_MODEL_PATH = "./model_CNN/cnn_trained_model.h5"
-TEMPLATE_CSV = "./model_CNN/list_of_brain_voxels_MNI_size_3.csv"
-NIFTI_TEMPLATE = "./model_CNN/MNI_size_3.nii.gz"
+# CNN_MODEL_PATH = "./model_CNN/cnn_trained_model.h5"  # Commented out since not used now
+# TEMPLATE_CSV = "./model_CNN/list_of_brain_voxels_MNI_size_3.csv"  # Commented out since not used now
+# NIFTI_TEMPLATE = "./model_CNN/MNI_size_3.nii.gz"  # Commented out since not used now
 
 # Feature extraction function (supports .xlsx)
 def extract_features(file_path):
@@ -110,34 +110,34 @@ def process_data():
         return jsonify({'error': str(e)}), 400
 
 # Route for CNN predictions (to process CSV data)
-@app.route('/cnn_predict', methods=['POST'])
-def cnn_predict():
-    try:
-        uploaded_file = request.files['csv_file']
-        if not uploaded_file:
-            return jsonify({'error': 'Please upload a CSV file'}), 400
+# @app.route('/cnn_predict', methods=['POST'])
+# def cnn_predict():
+#     try:
+#         uploaded_file = request.files['csv_file']
+#         if not uploaded_file:
+#             return jsonify({'error': 'Please upload a CSV file'}), 400
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            file_path = os.path.join(temp_dir, uploaded_file.filename)
-            uploaded_file.save(file_path)
+#         with tempfile.TemporaryDirectory() as temp_dir:
+#             file_path = os.path.join(temp_dir, uploaded_file.filename)
+#             uploaded_file.save(file_path)
 
-            # Preprocess data
-            X_data, file_names = preprocess_data(temp_dir)
+#             # Preprocess data
+#             X_data, file_names = preprocess_data(temp_dir)
 
-            # Run CNN prediction
-            predictions = run_cnn_prediction(X_data, CNN_MODEL_PATH)
+#             # Run CNN prediction
+#             predictions = run_cnn_prediction(X_data, CNN_MODEL_PATH)
 
-            # Save output to CSV
-            output_csv = os.path.join(temp_dir, "cnn_predictions.csv")
-            save_predictions_to_csv(predictions, file_names, temp_dir, TEMPLATE_CSV)
+#             # Save output to CSV
+#             output_csv = os.path.join(temp_dir, "cnn_predictions.csv")
+#             save_predictions_to_csv(predictions, file_names, temp_dir, TEMPLATE_CSV)
 
-            # Generate file URL for download
-            file_url = f"/download/{os.path.basename(output_csv)}"
+#             # Generate file URL for download
+#             file_url = f"/download/{os.path.basename(output_csv)}"
 
-            return render_template('cnn_results.html', file_url=file_url)
+#             return render_template('cnn_results.html', file_url=file_url)
 
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 400
 
 # Route for downloading the CNN predictions file
 @app.route('/download/<filename>')

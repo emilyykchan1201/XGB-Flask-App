@@ -22,3 +22,5 @@ tzdata==2025.2
 werkzeug==2.2.2
 xgboost==1.7.6
 zipp==3.21.0
+# tensorflow==2.13.0  # Add TensorFlow for CNN support
+# nibabel==3.0.0  # Ensure NIfTI support
