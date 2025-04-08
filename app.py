@@ -19,7 +19,7 @@ NIFTI_TEMPLATE = "./model_CNN/MNI_size_3.nii.gz"
 # Feature extraction function (supports .xlsx)
 def extract_features(file_path):
     """Compute features for XGBoost model."""
-    selected_columns = ['RotVelRes', 'RotAccRes']
+    selected_columns = ['RotVelRes', 'RotAccRes', 'RotAccX', 'RotAccZ']
     
     print(f'Extracting features from {file_path}...')
     
@@ -27,18 +27,30 @@ def extract_features(file_path):
     df = pd.read_excel(file_path, engine='openpyxl')
 
     feature_matrix = []
-    
+
     # Calculate features for each column
     for column in selected_columns:
         data = df[column]
 
-        # Calculate features
-        max_min_feature = np.max(data) - np.min(data)
-        sqrt_abs_max_feature = np.sqrt(np.abs(np.max(data)))
+        if column == 'RotVelRes':
+            # Calculate sqrt of absolute max for RotVelRes
+            sqrt_abs_max_feature = np.sqrt(np.abs(np.max(data)))
+            feature_matrix.append(sqrt_abs_max_feature)
+        
+        elif column == 'RotAccRes':
+            # Calculate delta (max - min) for RotAccRes
+            max_min_feature = np.max(data) - np.min(data)
+            feature_matrix.append(max_min_feature)
+        
+        elif column == 'RotAccX':
+            # Calculate delta (max - min) for RotAccX
+            max_min_feature = np.max(data) - np.min(data)
+            feature_matrix.append(max_min_feature)
 
-        # Append features to the feature matrix
-        feature_matrix.append(max_min_feature)
-        feature_matrix.append(sqrt_abs_max_feature)
+        elif column == 'RotAccZ':
+            # Calculate delta (max - min) for RotAccZ
+            max_min_feature = np.max(data) - np.min(data)
+            feature_matrix.append(max_min_feature)
 
     # Reshape feature matrix
     feature_matrix = np.array(feature_matrix).reshape((1, -1))
@@ -134,81 +146,4 @@ def download_file(filename):
 
 if __name__ == '__main__':
     # Run the Flask app
-    app.run(debug=True)
-
-
-# Home page
-@app.route('/')
-def home():
-    return render_template('index.html')
-
-# Process Excel file for XGB models
-@app.route('/xgb_predict', methods=['POST'])
-def xgb_predict():
-    try:
-        uploaded_file = request.files['xlsx_file']
-        if not uploaded_file:
-            return jsonify({'error': 'Please upload an Excel file (.xlsx)'}), 400
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as temp_file:
-            file_path = temp_file.name
-            uploaded_file.save(file_path)
-
-            # Extract features
-            selected_columns = ['RotVelRes', 'RotAccRes']
-            df = pd.read_excel(file_path, engine='openpyxl')
-            features = []
-
-            for column in selected_columns:
-                data = df[column]
-                max_min_feature = np.max(data) - np.min(data)
-                sqrt_abs_max_feature = np.sqrt(np.abs(np.max(data)))
-                features.extend([max_min_feature, sqrt_abs_max_feature])
-
-            features = np.array(features).reshape((1, -1))
-            os.remove(file_path)
-
-            # Load and predict with each model in the folder
-            predictions = {}
-            for model_file in os.listdir(XGB_MODEL_FOLDER):
-                if model_file.startswith("XGB_") and model_file.endswith(".json"):
-                    region = model_file.split("_")[1]  # Extract region name
-                    model = XGBRegressor()
-                    model.load_model(os.path.join(XGB_MODEL_FOLDER, model_file))
-                    predictions[region] = float(model.predict(features)[0])
-
-            return render_template('xgb_results.html', predictions=predictions)
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
-
-# Process CSV files for CNN prediction
-@app.route('/cnn_predict', methods=['POST'])
-def cnn_predict():
-    try:
-        uploaded_file = request.files['csv_file']
-        if not uploaded_file:
-            return jsonify({'error': 'Please upload a CSV file'}), 400
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            file_path = os.path.join(temp_dir, uploaded_file.filename)
-            uploaded_file.save(file_path)
-
-            # Preprocess data
-            X_data, file_names = preprocess_data(temp_dir)
-
-            # Run CNN prediction
-            predictions = run_cnn_prediction(X_data, CNN_MODEL_PATH)
-
-            # Save output to CSV
-            output_csv = os.path.join(temp_dir, "cnn_predictions.csv")
-            save_predictions_to_csv(predictions, file_names, temp_dir, TEMPLATE_CSV)
-
-            # Return the CSV file
-            return send_file(output_csv, as_attachment=True)
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
-
-if __name__ == '__main__':
     app.run(debug=True)
