@@ -1,0 +1,11 @@
+# .slugignore
+.git
+.gitignore
+node_modules
+*.log
+*.csv
+*.xlsx
+tests/
+.vscode/
+.idea/
+
