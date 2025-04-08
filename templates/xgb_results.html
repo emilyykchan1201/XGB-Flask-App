@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XGBoost Predictions</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>XGBoost Predictions</h1>
+    
+    <table border="1">
+        <tr>
+            <th>Region</th>
+            <th>Prediction</th>
+        </tr>
+        {% for region, prediction in predictions.items() %}
+        <tr>
+            <td>{{ region }}</td>
+            <td>{{ prediction }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <br>
+    <a href="/">Go back</a>
+</body>
+</html>
