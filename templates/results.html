@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prediction Result</title>
+    <title>Predictions</title>
 </head>
 <body>
-    <h2>Prediction Result</h2>
-    <p><strong>Predicted Value:</strong> {{ prediction }}</p>
-    <br>
-    <a href="/">Go back</a>
+    <h1>Predictions for Different Regions</h1>
+    <ul>
+        {% for region, prediction in predictions.items() %}
+            <li><strong>{{ region }}:</strong> {{ prediction }}</li>
+        {% endfor %}
+    </ul>
+    <a href="/">Upload another file</a>
 </body>
 </html>

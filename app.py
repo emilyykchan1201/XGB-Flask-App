@@ -4,11 +4,12 @@ import pandas as pd
 from xgboost import XGBRegressor
 import os
 import tempfile
+import glob  # For dynamically finding model files
 
 app = Flask(__name__)
 
-# Predefined model path (CHANGE IF NEEDED)
-MODEL_PATH = "./model/XGBmodel_WB.json"
+# Model directory path
+MODEL_DIR = "./model/"
 
 # Feature extraction function (supports .xlsx)
 def extract_features(file_path):
@@ -47,7 +48,7 @@ def home():
     return render_template('index.html')
 
 
-# Route to process input data and generate predictions
+# Route to process input data and generate predictions using multiple models
 @app.route('/process', methods=['POST'])
 def process_data():
     try:
@@ -65,18 +66,33 @@ def process_data():
             # Extract features from uploaded .xlsx file
             features = extract_features(file_path)
 
-            # Load XGB model
-            model = XGBRegressor()
-            model.load_model(MODEL_PATH)
+            # Find all XGB models in the folder
+            model_files = glob.glob(os.path.join(MODEL_DIR, "XGB_*_model.json"))
+            
+            if not model_files:
+                return jsonify({'error': 'No models found in the model directory'}), 400
 
-            # Run prediction
-            predictions = model.predict(features)
+            predictions = {}
+
+            for model_file in model_files:
+                # Extract region name from the file name
+                region_name = model_file.split("XGB_")[1].split("_model.json")[0]
+
+                # Load XGB model
+                model = XGBRegressor()
+                model.load_model(model_file)
+
+                # Run prediction
+                prediction = model.predict(features)[0]
+
+                # Store prediction result with region name
+                predictions[region_name] = prediction
 
             # Delete temporary file after processing
             os.remove(file_path)
 
             # Return predictions
-            return render_template('results.html', prediction=predictions[0])
+            return render_template('results.html', predictions=predictions)
 
     except Exception as e:
         return jsonify({'error': str(e)}), 400
